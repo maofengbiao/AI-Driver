@@ -1,9 +1,9 @@
 # AI-Driver
-AI-Driver is a ...
+AI-Driver (AI-based driver classifier)is an ensemble method for predicting the driver status of somatic missense mutations based on 23 pathogenicity features. Missense mutations are the most common protein-coding mutations found in cancer genomes and increasing number of missense mutations has been recognized as clinically actionable variants. AI-Driver outperforms its individual constituent prediction tools, as expected for ensemble methods. We have shown that AI-Driver consistently has the best overall performance as compared to existing methods, particularly for distinguishing driver mutations from uncommon neutral missense mutations with an AF below 1%. AI-Driver also outperforms existing cancer-specific methods for distinguishing driver mutations from passenger mutations. Therefore, AI-Driver can be used to prioritize the most likely driver mutations among the sea of rare somatic mutations that are increasingly discovered as sequencing studies expand in scale.
 
 ## Download
 * Clone and fork code and from this repository.
-* Train data is available in the DriverBase folder, 23 features of whole exome for any possible variant can be downloaded [Here](http://47.89.179.59/download/varcards.main.Phred_scaled.xls.gz).
+* Training data is available in the DriverBase folder and 23 features of whole exome for any possible variant can be downloaded [here](http://159.226.67.237/sun/AI-Driver/download/varcards.main.Phred_scaled.xls.gz).
 
 ## Usage
 ### Environment Requirement
@@ -31,7 +31,7 @@ where the used packages include
 ```python
 python DataLoader.py -pp POSITIVE_PATH -pn NEGATIVE_PATH -op OUTPUT_PATH -lp LABEL_PATH -l TEST_LABEL_EXIST
 python outlier_detect.py -ip INPUT_PATH -op OUTPUT_PATH -t DATA_TYPE
-python train.py -d DATA_TYPE -m METHOD
+python train.py -p DATA_PATH -m METHOD
 python test.py -f TRAIN -d DATA_TYPE -tp TEST_PATH -of OUTPUT_FOLDER -lp LABEL_PATH -l TEST_LABEL_EXIST
 python analyze.py -d DATA_FORM -p DATA_PATH
 ```
@@ -45,9 +45,8 @@ with the one in test.py's hyperparameters. Set TEST_LABEL_EXIST to "True" if you
 * outlier_detect.py is not compulsory, only adopted if removing outliers is useful. We use Isolation Forest to remove the outliers from the
 data. INPUT_PATH is the path of DataLoader.py's OUTPUT_PATH, OUTPUT_PATH is for data with outliers removed (e.g. DriverBase/cleaned_data_orig.npy), 
 and DATA_TYPE chosen from {"orig", "phred"}. Specific introduction can be found by using --help command. 
-* train.py does the training process with 10-fold cross-validation, where the parameter space is defined in utils.py. DATA_TYPE take from {"orig", "phred", "orig_cleaned", "phred_cleaned"},  
-which indicates original data, Phred data, original data with outliers removed and Phred data with outliers removed. METHOD can be chosen from SVM (svm), Gradient Boosting Tree (gbdt), Random Forest (rf), 
-Multi-layer Perceptron (mlp), Adaboost (adaboost) and XGBoost (xgbt).
+* train.py does the training process with 10-fold cross-validation, where the parameter space is defined in utils.py. DATA_PATH is the path for training data. 
+METHOD can be chosen from SVM (svm), Gradient Boosting Tree (gbdt), Random Forest (rf),  Multi-layer Perceptron (mlp), Adaboost (adaboost) and XGBoost (xgbt).
 * test.py does the testing. Model parameters need to be copied, models are saved during testing. If TRAIN is set to "True", then train and save models according to the best parameters, else no training is done. Thus
 TRAIN should be set to "True" for the first time and the other times are optional. DATA_TYPE should take from {"orig", "phred"}, TEST_PATH is the path of test data. OUTPUT_FOLDER is a folder for saving prediction results, 
 usually can make it the same directory as test data. LABEL_PATH is for loading the label information to generate output xls files. This path should be consistent with the one you indicated in DataLoader.py. Set TEST_LABEL_EXIST 
@@ -71,19 +70,21 @@ python outlier_detect.py -ip DriverBase/Phred_Data.npy -op DriverBase/cleaned_da
 ```
 * Perform training on the data using 10-fold cross-validation and determine best parameters using grid-search. We can employ XGBoost to build a cleaned Phred-scaled model using -m "xgbt" and -d "phred_cleaned".
 ```python
-python train.py -d phred_cleaned -m xgbt
+python train.py -p DriverBase/cleaned_data_phred.npy -m xgbt
 ```
 * Testing model using independent data.
 ```python
 python DataLoader.py -pp Test_Data_Final/Pancancer/Pancancer_positive_orig.xls -pn Test_Data_Final/Pancancer/Pancancer_negative_orig.xls -op Test_Data_Final/Pancancer/Phred_Data.npy -lp Test_Data_Final/Pancancer/label_phred.npy -l True
 python test.py -f True -d phred -tp Test_Data_Final/Pancancer/Phred_Data.npy -of Test_Data_Final/Pancancer/ -lp Test_Data_Final/Pancancer/label_phred.npy -l True
 ```
-* Evaluate the performance based on 10-fold cross-validation and independent test data. ??????
+* Evaluate the performance based on 10-fold cross-validation and independent test data. SHAP analysis of feature importance and SHAP value is also supported. You can change the source code to specify which kind of analysis to perform on. 
 ```python
-analyze.py   ???
+python analyze.py -d phred -p DriverBase/cleaned_data_phred.npy
 ```
 #### Notes for running code
-- 
+- Be careful -of indicates a folder, not file. Recommended to add '/' at last
+- XGBoost's parameters are determined two or three at a time but not all at the same time due to the CPU power. For faster training, you can also changhe the code to determine the parameters two or three at a time.
 
 
 ### Copyright
+Copyright (c) @ University of Michigan 2019-2021. All rights reserved. Please note some constituent features of AI-Driver contain specific licence or usage constraints for non-academic usage. AI-Driver does not grant the non-academic usage of those scores, so please contact the original score/method providers for proper usage purpose.        
